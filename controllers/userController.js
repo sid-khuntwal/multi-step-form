@@ -1,5 +1,6 @@
 const userModel = require("../models/userModel");
-const formModel = require("../models/formModel")
+const formModel = require("../models/formModel");
+const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 exports.getAllUsers = async (req, res) => {
@@ -117,20 +118,37 @@ exports.getDataController = async (req, res) => {
 
 exports.sendDataController = async (req, res) => {
     try {
-        const { username, email, phone, address, city, state, pincode, country } = req.body;
+        const { username, email, phone, address, city, state, pincode, country, userId } = req.body;
 
-        const data = new formModel({ username, email, phone, address, city, state, pincode, country });
+        const exisitingUser = await userModel.findById(userId);
+        //validaton
+        if (!exisitingUser) {
+            return res.status(404).send({
+                success: false,
+                message: "unable to find user",
+            });
+        }
+
+        const data = new formModel({ username, email, phone, address, city, state, pincode, country, userId });
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        await data.save({ session });
+        exisitingUser.data.push(data);
+        await exisitingUser.save({ session });
+        await session.commitTransaction();
+
+
         await data.save();
         return res.status(201).send({
             success: true,
-            message: "User Registered",
+            message: "Data Saved",
             data
         })
 
     } catch (error) {
         console.log(error);
         return res.status(500).send({
-            message: 'Error in register callback',
+            message: 'Error in Send data callback',
             success: false,
             error
         })
