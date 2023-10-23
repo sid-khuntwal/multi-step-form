@@ -15,7 +15,7 @@ exports.getAllUsers = async (req, res) => {
         console.log(error);
         res.status(404).send({
             success: false,
-            message: "Not found"
+            message: "User Not Found"
         })
     }
 }
@@ -154,3 +154,28 @@ exports.sendDataController = async (req, res) => {
         })
     }
 }
+
+exports.userDataControlller = async (req, res) => {
+    try {
+        const userdata = await userModel.findById(req.params.id).populate("data");
+        const data = userdata.data;
+        if (!userdata) {
+            return res.status(404).send({
+                success: false,
+                message: "Data not found with this id",
+            });
+        }
+        return res.status(200).send({
+            success: true,
+            message: "user data",
+            data,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(400).send({
+            success: false,
+            message: "error in user data controller",
+            error,
+        });
+    }
+};
